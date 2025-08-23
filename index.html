@@ -642,6 +642,31 @@ window.forcePrecog = () => { DEBUG.forcePrecog = true; };
 
 const SYM = { WILD:'wild.png', BLANK:'Blank.png', BONUS3:'3.png', BONUS2:'2.png', BONUS1:'1.png', H1:'h1.png', H2:'h2.png', H3:'h3.png', M1:'m1.png', M2:'m2.png', M3:'m3.png', L1:'l1.png', L2:'l2.png' };
 const CASH_MULTIPLIERS = [1,2,5,10,15,25,75,100];
+// Weighted odds for cash tiles (bigger = rarer)
+// Tune these to taste; the ratios matter, not the absolute numbers.
+const CASH_WEIGHTS = {
+  1: 40,
+  2: 28,
+  5: 16,
+  10: 38,
+  15: 5,
+  25: 2.5,
+  75: 1.7,
+  100: 1.3
+};
+
+function pickCashMultiplierWeighted() {
+  const entries = Object.entries(CASH_WEIGHTS).map(([m, w]) => [Number(m), Number(w)]);
+  const total = entries.reduce((s, [, w]) => s + w, 0);
+  let roll = Math.random() * total;
+  for (const [mult, w] of entries) {
+    roll -= w;
+    if (roll <= 0) return mult;
+  }
+  return entries[0][0]; // fallback
+}
+
+
 function getCashFilename(mult, betAmount){ return `fg_${mult * betAmount}.png`; }
 const PAYS_3OAK = { [SYM.WILD]:100, [SYM.H1]:40, [SYM.H2]:30, [SYM.H3]:20, [SYM.M1]:12, [SYM.M2]:10, [SYM.M3]:8, [SYM.L1]:5, [SYM.L2]:3 };
 const JACKPOT_VALUES = { mini:1000, minor:5000, major:100000, grand:500000 };
@@ -651,6 +676,18 @@ function pulsePlayfield() {
   void playfieldInner.offsetWidth;
   playfieldInner.classList.add('bonus-pulse');
 }
+// Force a base-game line hit by number key (1–9)
+const LINE_TEST_MAP = {
+  '1': SYM.L2,
+  '2': SYM.L1,
+  '3': SYM.M3,
+  '4': SYM.M2,
+  '5': SYM.M1,
+  '6': SYM.H3,
+  '7': SYM.H2,
+  '8': SYM.H1,
+  '9': SYM.WILD
+};
 
 const SFX = {
   base3:new Audio('./audio/Contact_3.mp3'),
@@ -974,7 +1011,7 @@ function getBonusResult(){
   if (r < BLANK_SHARE) {
     return { type: 'blank', file: 'fg_blank.png' };
   } else if (r < BLANK_SHARE + CASH_SHARE) {
-    const mult = CASH_MULTIPLIERS[Math.floor(Math.random() * CASH_MULTIPLIERS.length)];
+      const mult = pickCashMultiplierWeighted();
     return { type: 'cash', mult, file: getCashFilename(mult, bet()) };
   } else if (r < BLANK_SHARE + CASH_SHARE + MULTI_SHARE) {
     return { type: 'multi', mult: 2, file: 'fg_2x.png' };
@@ -1370,7 +1407,15 @@ const cashCells  = results.filter(r => r.type === 'cash');
 // Must “make contact”: all three positions valid (no blank)
 if (!hasBlank) {
   // Multiplier (bonus uses only 2x when present)
-  mult = hasMulti ? 2 : 1;
+// Stack all 2x symbols multiplicatively: 1=×2, 2=×4, 3=×8, ...
+const multiCount = results.reduce((n, r) => n + (r.type === 'multi' ? 1 : 0), 0);
+
+// OPTIONAL: cap stacking (uncomment if you want a maximum, e.g. 3 doublers -> max ×8)
+// const MAX_DOUBLERS = 3;
+// const effectiveCount = Math.min(multiCount, MAX_DOUBLERS);
+// const mult = 2 ** effectiveCount;
+
+const mult = 2 ** multiCount;  // no cap
 
   // Add cash values (files are like fg_1500.png where 1500 = cents)
   for (const c of cashCells) {
@@ -1444,14 +1489,22 @@ function flashWin(msg){ const b=document.createElement('div'); b.className='bann
 paytableBtn.onclick=()=>paytable.classList.add('show'); closePTBtn.onclick=()=>paytable.classList.remove('show'); spinBtn.onclick=handleSpinClick;
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
+
+  // NEW: number keys 1–9 = force a 3OAK base hit for testing
+  if (LINE_TEST_MAP[k]) {
+    DEBUG.forceSymbolsOnce = [LINE_TEST_MAP[k], LINE_TEST_MAP[k], LINE_TEST_MAP[k]];
+    // quick “gaffe” flash so you know it armed
+    gameRoot.classList.add('border-flash');
+    setTimeout(() => gameRoot.classList.remove('border-flash'), 900);
+    console.log('[Debug] Forcing 3OAK:', LINE_TEST_MAP[k]);
+  }
+
   if (k === 'b') window.forceBonusOnce();
   if (k === 'n') window.forceNearMissOnce();
   if (k === 'j') window.forceJackpot();
   if (k === 'p') {
-    // By default, 'p' flags precog for the next BONUS spin
     window.forcePrecog();
     if (e.shiftKey) {
-      // Shift+P convenience: also force the next spin to be a bonus (3-2-1)
       window.forceBonusOnce();
       console.log('[Debug] Shift+P: forcing BONUS and PRECOG on next spin');
     } else {
@@ -1459,7 +1512,13 @@ document.addEventListener('keydown', (e) => {
     }
   }
 
+  // NEW: spacebar triggers SPIN (same as clicking the button)
+  if (e.code === 'Space' || k === ' ') {
+    e.preventDefault();
+    handleSpinClick();
+  }
 });
+
 updateMeters(); updateBetButtons();
 console.log('321 Contact v7 (Fixed) - Debug Keys: B=bonus, N=near-miss, J=grand, P=precog (Shift+P = force bonus+precog)');
 </script>
