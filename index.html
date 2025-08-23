@@ -695,7 +695,8 @@ const SFX = {
   base2Ant:new Audio('./audio/Contact_2_anticpation.mp3'),
   base1Contact:new Audio('./audio/Contact_1Contact.mp3'),
   fgTrans:new Audio('./audio/Contact_FG_Trans1.mp3'),
-  fgWait1:new Audio('./audio/Contact_FG_Wait1.mp3'),
+  fgWaitIntro:new Audio('./audio/Contact_FG_waitIntro.mp3'),
+  fgWaitLoop:new Audio('./audio/Contact_FG_waitLoop.mp3'),
   fgLoop:new Audio('./audio/Contact_FG_Loop.mp3'),
   fgOutro:new Audio('./audio/Contact_FG_Outro.mp3'),
   fgBigWinLoop:new Audio('./audio/Contact_FG_BigWin_Loop.mp3'), // ADD THIS LINE
@@ -707,11 +708,18 @@ const SFX = {
   winLarge:new Audio('./audio/Rack_7large.mp3'),
   winBig:new Audio('./audio/Rack_9extralarge.mp3')
 };
-SFX.fgWait1.loop = true; SFX.fgLoop.loop = true; SFX.reelSpinMusic.loop = true;
-SFX.fgWait1.loop = true; 
-SFX.fgLoop.loop = true; 
+// Wait screen behavior: intro does NOT loop; the loop does.
+SFX.fgWaitIntro.loop = false;
+SFX.fgWaitLoop.loop  = true;
+
+// Existing loops
+SFX.fgLoop.loop = true;
 SFX.reelSpinMusic.loop = true;
-SFX.fgBigWinLoop.loop = true; // ADD THIS LINE
+SFX.fgBigWinLoop.loop = true;
+
+// Preload + prime for tighter handoff
+SFX.fgWaitIntro.preload = 'auto';
+SFX.fgWaitLoop.preload  = 'auto';
 
 let audioEnabled = true;
 const soundBtn = document.getElementById('sound');
@@ -720,11 +728,18 @@ soundBtn.textContent = 'Sound On';
 soundBtn.addEventListener('click', async () => {
   if (!audioEnabled) {
     // Turn ON audio
-    try {
-      await SFX.winSmall.play(); SFX.winSmall.pause(); SFX.winSmall.currentTime = 0;
-    } catch {}
-    audioEnabled = true;
-    soundBtn.textContent = 'Sound On';
+try {
+  await SFX.winSmall.play(); SFX.winSmall.pause(); SFX.winSmall.currentTime = 0;
+} catch {}
+// Prime the wait LOOP so it's decoded before we need it
+try {
+  await SFX.fgWaitLoop.play(); 
+  SFX.fgWaitLoop.pause(); 
+  SFX.fgWaitLoop.currentTime = 0;
+} catch {}
+
+audioEnabled = true;
+soundBtn.textContent = 'Sound On';
   } else {
     // Turn OFF audio
     audioEnabled = false;
@@ -831,6 +846,8 @@ const fsSpinImage = document.getElementById('fsSpinImage');
 const fsFlip = document.getElementById('fsFlip');
 const fsSpinImageBack = document.getElementById('fsSpinImageBack');
 let lastFsCount = null;
+// guard to prevent double-start of the wait loop
+let isWaitLoopPlaying = false;
 
 const FS_SPIN_MS = 1200; // keep in sync with CSS animation duration
 
@@ -1138,18 +1155,62 @@ function scoreBase(result){
   if(payout>0){ hexes.forEach(h=>h.classList.add('winning')); flashWin(`WIN ${payout} CREDITS`); }
   countUpWin(payout,{ onDone:()=>{ hexes.forEach(h=>h.classList.remove('winning')); state.spinning=false; setUI(true);} });
 }
+function startWaitLoop() {
+  if (!audioEnabled) return;
+  if (isWaitLoopPlaying) return;        // <-- prevents double loop
+  try {
+    safeStop(SFX.fgWaitLoop);           // ensure clean start
+    SFX.fgWaitLoop.currentTime = 0;
+    SFX.fgWaitLoop.loop = true;         // loop the entire file
+    SFX.fgWaitLoop.play().catch(()=>{});
+    isWaitLoopPlaying = true;
+  } catch {}
+}
+
+function stopWaitMusic() {
+  try {
+    SFX.fgWaitIntro.onended = null;     // no stray handoff
+  } catch {}
+  safeStop(SFX.fgWaitIntro);
+  safeStop(SFX.fgWaitLoop);
+  isWaitLoopPlaying = false;
+}
 
 function enterBonus(){
-  state.inBonus=true; setUI(true); safePlay(SFX.fgTrans); safePlay(SFX.fgWait1,{loop:true});
+  state.inBonus = true;
+  setUI(true);
+  safePlay(SFX.fgTrans);
+
+  // Play the short intro once, then LOOP the entire wait loop file
+  stopWaitMusic(); // reset any previous state
+  safePlay(SFX.fgWaitIntro, { loop:false, restart:true });
+
+  SFX.fgWaitIntro.onended = () => {
+    SFX.fgWaitIntro.onended = null;
+    // still on the wait screen?
+    if (state.inBonus && !document.getElementById('startBonus').disabled) {
+      startWaitLoop(); // guarded: won’t double-start
+    }
+  };
+
   playfieldInner.classList.add('zoomed');
   setTimeout(()=>{ bonusIntro.classList.add('show','pulse'); },1000);
 }
+
 startBonusBtn.addEventListener('click', ()=>{
-  bonusIntro.classList.remove('show','pulse'); safeStop(SFX.fgWait1);
-  safePlay(SFX.fgLoop,{ loop:true, restart:false }); // start loop immediately on START
+  bonusIntro.classList.remove('show','pulse');
+
+  stopWaitMusic(); // <-- stops intro and/or the loop, clears onended, resets guard
+
+  safePlay(SFX.fgLoop,{ loop:true, restart:false }); // bonus background loop
   playfieldInner.classList.add('flipped');
-  setTimeout(()=>{ playfieldInner.classList.remove('zoomed'); setTimeout(()=>{ startFreeSpins(); },600); },1200);
+  setTimeout(()=>{ 
+    playfieldInner.classList.remove('zoomed'); 
+    setTimeout(()=>{ startFreeSpins(); },600); 
+  },1200);
 });
+
+
 function startFreeSpins(){
   state.bonusSpins=10; 
   state.bonusTotal=0;
