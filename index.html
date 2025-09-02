@@ -19,7 +19,7 @@
  /* TOTAL GAME HEIGHT = header + header-gap + jackpots + pf-gap + controls(180) + playfield(580) */
   --h: calc(var(--header-h) + var(--header-gap) + var(--jackpot-h) + var(--pf-gap) + 760px);
     /* COLORS */
-    --accent:#00d2ff;--bg:#05070c;--panel:#0b1328;--line:#40c8ff;--text:#e8f3ff;--win:#2ecc71;--warn:#ffaa00;
+    --accent:#00d2ff;--bg:#05070c;--panel:#0b1328;--line:#a19fe4;--text:#e8f3ff;--win:#2ecc71;--warn:#ffaa00;
     --tease:#4df3ff; --tease-strong:#7ff9ff; --border-glow:#49b9ff;
     --mini:#aa4caf; --minor:#2196F3; --major:#00ff0d; --grand:#E91E63;
   }
@@ -27,7 +27,7 @@
   *{box-sizing:border-box}
   body {
       margin: 0;
-      background: radial-gradient(50% 60% at 50% 40%, #0e1a3a, #05070c);
+      background: radial-gradient(50% 60% at 50% 40%, #000000, #05070c);
       min-height: 100vh;
       display: flex;
       flex-direction: column; /* stack top to bottom */
@@ -207,7 +207,7 @@
   /* PRECOG VIDEO OVERLAY */
   .precog-overlay{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:50; pointer-events:none }
   .precog-overlay.show{display:flex}
-  .precog-overlay video{ width:100%; height:100%; object-fit:fill; opacity:0.9 }
+  .precog-overlay video{ width:100%; height:100%; object-fit:fill; opacity:1 }
   .game.precog-gaffe{animation:precogFlash 600ms ease}
   @keyframes precogFlash{0%{box-shadow:0 40px 90px rgba(0,0,0,.6) inset,0 14px 40px rgba(0,0,0,.6),0 0 0 0 rgba(255,165,0,0)}30%{box-shadow:0 40px 90px rgba(0,0,0,.4) inset,0 14px 40px rgba(0,0,0,.4),0 0 32px 10px rgba(255,0,0,.85)}100%{box-shadow:0 40px 90px rgba(0,0,0,.6) inset,0 14px 40px rgba(0,0,0,.6),0 0 0 0 rgba(255,165,0,0)}}
 
@@ -227,7 +227,7 @@
   .r3{left:50%;transform:translateX(-50%);top:38%}
 
   svg.wires{ position:absolute; inset:0; pointer-events:none;
-    filter: drop-shadow(0 0 12px rgba(0,100,255,0.8)) drop-shadow(0 0 20px rgba(0,150,255,0.6)) drop-shadow(0 0 30px rgba(0,200,255,0.4)); }
+    filter: drop-shadow(0 0 12px rgb(0, 0, 255)) drop-shadow(0 0 20px rgb(0, 21, 255)) drop-shadow(0 0 30px rgba(0, 34, 255, 0.4)); }
   .wire{stroke:var(--line);stroke-width:6;fill:none;opacity:.9}
   .wire.fuse{ stroke-dasharray:100; stroke-dashoffset:100; opacity:0; animation:fuseEffect 0.8s ease-out forwards }
   @keyframes fuseEffect{0%{stroke-dashoffset:100;opacity:0;filter:drop-shadow(0 0 12px rgba(0,255,0,.9))}50%{opacity:1;stroke:#3cff00}100%{stroke-dashoffset:0;opacity:1;stroke:var(--line)}}
@@ -284,7 +284,7 @@
   .game.border-flash{animation:borderFlash 900ms ease}
   @keyframes borderFlash{
     0%{box-shadow:0 40px 90px rgba(0,0,0,.6) inset, 0 14px 40px rgba(0,0,0,.6), 0 0 0 0 rgba(73,185,255,.0)}
-    20%{box-shadow:0 40px 90px rgba(0,0,0,.4) inset, 0 14px 40px rgba(0,0,0,.4), 0 0 32px 8px rgba(73,185,255,.9)}
+    20%{box-shadow:0 40px 90px rgba(0,0,0,.4) inset, 0 14px 40px rgba(0,0,0,.4), 0 0 32px 8px rgba(73, 255, 76, 0.9)}
     100%{box-shadow:0 40px 90px rgba(0,0,0,.6) inset, 0 14px 40px rgba(0,0,0,.6), 0 0 0 0 rgba(73,185,255,.0)}
   }
 
@@ -422,7 +422,7 @@
   .pt{display:grid;grid-template-columns:1fr auto;gap:10px}
   .pt div{padding:8px 12px;background:#0b1430;border:1px solid #203a7a;border-radius:10px;font-weight:800}
 
-  .wordmark{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);font-size:64px;font-weight:900;letter-spacing:2px;opacity:.22;text-shadow:0 2px 0 rgba(255,255,255,.08),0 -2px 0 rgba(0,0,0,.6)}
+  .wordmark{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);font-size:64px;font-weight:900;letter-spacing:2px;opacity:.2;text-shadow:0 2px 0 rgba(255,255,255,.08),0 -2px 0 rgba(0,0,0,.6)}
   #startBonus { display:block; margin: 10px auto 0; }
   .jackpot-celebration { display: none !important; }
 
@@ -474,8 +474,8 @@
         <svg class="wires" viewBox="0 0 1280 580" preserveAspectRatio="none">
             <path class="wire" d="M0 140 L1020 140"/>
             <path class="wire" d="M1020 140 L640 380"/>
-            <path class="wire" d="M640 380 L482 380"/>
-            <path class="wire" d="M485 380 L485 500"/>
+            <path class="wire" d="M640 380 L479 380"/>
+            <path class="wire" d="M482 380 L482 500"/>
         </svg>
         <div class="wordmark"><img src="assets/contact_tt.png"></div>
         <div class="nodes">
@@ -584,7 +584,7 @@
 
 <!-- Bonus Spin Win Display -->
 <div class="bonus-win-display" id="bonusWinDisplay">
-  <div class="bonus-win-label">WINNER!</div>
+  <div class="bonus-win-label">CONTACT WIN!</div>
   <div class="bonus-win-amount" id="bonusWinAmount">$0</div>
 </div>
 
@@ -1098,9 +1098,9 @@ function runPrecogSequence(result){
   state.precogActive=true; gameRoot.classList.add('precog-gaffe'); setTimeout(()=>gameRoot.classList.remove('precog-gaffe'),650); fadeOutAudio(SFX.reelSpinMusic,400);
   precogOverlay.classList.add('show'); try{precogVideo.currentTime=0; precogVideo.play().catch(()=>{});}catch{}
   startReel(0); startReel(1); startReel(2);
-  setTimeout(()=>{ stopReel(0, result[0]); },10000);
-  setTimeout(()=>{ stopReel(1, result[1]); },10700);
-  setTimeout(()=>{ stopReel(2, result[2]); setTimeout(()=>{ precogOverlay.classList.remove('show'); try{precogVideo.pause();}catch{} state.precogActive=false; gameRoot.classList.add('border-flash'); setTimeout(()=>gameRoot.classList.remove('border-flash'),900); if (!state.precogActive) /* stinger suppressed during PRECOG */ enterBonus(); },100); },11400);
+  setTimeout(()=>{ stopReel(0, result[0]); },9600);
+  setTimeout(()=>{ stopReel(1, result[1]); },10000);
+  setTimeout(()=>{ stopReel(2, result[2]); setTimeout(()=>{ precogOverlay.classList.remove('show'); try{precogVideo.pause();}catch{} state.precogActive=false; gameRoot.classList.add('border-flash'); setTimeout(()=>gameRoot.classList.remove('border-flash'),5000); if (!state.precogActive) /* stinger suppressed during PRECOG */ enterBonus(); },1250); },10400);
 }
 
 function handleSpinClick(){ 
