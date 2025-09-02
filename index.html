@@ -1212,6 +1212,7 @@ startBonusBtn.addEventListener('click', ()=>{
 
 
 function startFreeSpins(){
+  lastFsCount = null;
   state.bonusSpins = 10; 
   state.bonusTotal = 0;
 
@@ -1276,6 +1277,17 @@ function updateBonusHUD() {
   lastFsCount = n;
 }
 
+function resetFsFlipTo10() {
+  // clear any remembered last value so first draw is a non-animated set
+  lastFsCount = null;
+
+  // ensure the flip container isn't mid-animation
+  if (fsFlip) fsFlip.classList.remove('animating');
+
+  // force both faces to FS_10 so the next show is clean
+  if (fsSpinImage)     fsSpinImage.src     = './assets/FS_10.png';
+  if (fsSpinImageBack) fsSpinImageBack.src = './assets/FS_10.png';
+}
 
 
 // === JACKPOT VIDEO OVERLAY HELPERS (replaces the old popup-based section) ===
@@ -1528,30 +1540,90 @@ if (jackpotsWon.length > 0) {
 }
 
 function endBonus(){
-  safeStop(SFX.fgLoop); safePlay(SFX.fgOutro);
-  fsLeft.style.display='block'; fsRight.style.display='block';
-  bigWinDisplay.classList.add('show'); bigWinAmount.textContent='0';
-  const start=performance.now(), duration=6000, total=state.bonusTotal;
+  // outro audio
+  safeStop(SFX.fgLoop);
+  safePlay(SFX.fgOutro);
+
+  // You want these visible during the transition:
+  fsLeft.style.display  = 'block';
+  fsRight.style.display = 'block';
+
+  // big win overlay count-up
+  bigWinDisplay.classList.add('show');
+  bigWinAmount.textContent = '0';
+
+  const start    = performance.now();
+  const duration = 6000;
+  const total    = state.bonusTotal;
+
   function frame(now){
-    const p=Math.min(1,(now-start)/duration), cur=Math.floor(total*p);
-    bigWinAmount.textContent=toCurrency(cur);
-    if(p<1) requestAnimationFrame(frame);
-    else {
+    const p   = Math.min(1, (now - start) / duration);
+    const cur = Math.floor(total * p);
+    bigWinAmount.textContent = toCurrency(cur);
+
+    if (p < 1) {
+      requestAnimationFrame(frame);
+    } else {
       setTimeout(()=>{
         bigWinDisplay.classList.remove('show');
+
+        // begin flip-back transition
         playfieldInner.classList.add('zoomed');
         setTimeout(()=>{
           playfieldInner.classList.remove('flipped');
+
+          // finish zoom-out
           setTimeout(()=>{
             playfieldInner.classList.remove('zoomed');
-            state.credits+=total; state.win=total; updateMeters(); state.inBonus=false; state.spinning=false; setUI(true);
-          },1200);
-        },600);
-      },1000);
+
+            // ✅ delay the FS reset until ALL transforms are done
+            waitForPlayfieldIdle(() => {
+              // meters/state settle
+              state.credits += total;
+              state.win      = total;
+              updateMeters();
+
+              state.inBonus  = false;
+              state.spinning = false;
+              setUI(true);
+
+              // finally, reset the FS flip to 10 for the NEXT bonus
+              // (now that the board is steady and facing base)
+              resetFsFlipTo10();
+            });
+
+          }, 1200);
+        }, 600);
+      }, 1000);
     }
   }
+
   requestAnimationFrame(frame);
 }
+
+// Resolve after playfield transform settles (no .flipped/.zoomed left)
+function waitForPlayfieldIdle(cb) {
+  let done = false;
+  const finish = () => { if (done) return; done = true; cb && cb(); };
+
+  const onEnd = (e) => {
+    if (e.propertyName !== 'transform') return;
+    // call when we're fully back on base side & zoom cleared
+    if (!playfieldInner.classList.contains('flipped') &&
+        !playfieldInner.classList.contains('zoomed')) {
+      playfieldInner.removeEventListener('transitionend', onEnd);
+      finish();
+    }
+  };
+
+  playfieldInner.addEventListener('transitionend', onEnd);
+  // safety in case the event doesn’t fire (e.g., browser quirk)
+  setTimeout(() => {
+    playfieldInner.removeEventListener('transitionend', onEnd);
+    finish();
+  }, 1800);
+}
+
 
 function flash(msg){ const b=document.createElement('div'); b.className='banner show'; b.style.borderColor='#ffaa00'; b.textContent=msg; gameRoot.appendChild(b); setTimeout(()=>b.remove(),1000); }
 function flashWin(msg){ const b=document.createElement('div'); b.className='banner show'; b.style.borderColor='#2ecc71'; b.textContent=msg; gameRoot.appendChild(b); setTimeout(()=>b.remove(),1100); }
