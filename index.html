@@ -1520,7 +1520,7 @@ if (jackpotsWon.length > 0) {
 
 function endBonus(){
   safeStop(SFX.fgLoop); safePlay(SFX.fgOutro);
-  fsLeft.style.display='none'; fsRight.style.display='none';
+  fsLeft.style.display='block'; fsRight.style.display='block';
   bigWinDisplay.classList.add('show'); bigWinAmount.textContent='0';
   const start=performance.now(), duration=6000, total=state.bonusTotal;
   function frame(now){
