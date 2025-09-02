@@ -1212,14 +1212,19 @@ startBonusBtn.addEventListener('click', ()=>{
 
 
 function startFreeSpins(){
-  state.bonusSpins=10; 
-  state.bonusTotal=0;
-  fsLeft.style.display='block';
-  fsRight.style.display='block';
-  fsLeft.classList.add('rotating');   // <— start rotation
+  state.bonusSpins = 10; 
+  state.bonusTotal = 0;
+
+  // NEW: reset the free-spin image flip state so we start on FS_10 cleanly
+  lastFsCount = null;                        // <—
+  fsFlip && fsFlip.classList.remove('animating'); // <—
+
+  fsLeft.style.display = 'block';
+  fsRight.style.display = 'block';
+  fsLeft.classList.add('rotating');
   updateBonusHUD();
   if (SFX.fgLoop.paused) {
-    safePlay(SFX.fgLoop,{ loop:true, restart:false });
+    safePlay(SFX.fgLoop, { loop:true, restart:false });
   }
   nextFreeSpin();
 }
@@ -1469,14 +1474,18 @@ const cashCells  = results.filter(r => r.type === 'cash');
 if (!hasBlank) {
   // Multiplier (bonus uses only 2x when present)
 // Stack all 2x symbols multiplicatively: 1=×2, 2=×4, 3=×8, ...
+// Multiplier: each MULTI cell is ×2, stack multiplicatively
 const multiCount = results.reduce((n, r) => n + (r.type === 'multi' ? 1 : 0), 0);
+mult = Math.pow(2, multiCount);
+
+// Optional hard cap (keep or remove to taste)
+if (mult > 4) mult = 4;
 
 // OPTIONAL: cap stacking (uncomment if you want a maximum, e.g. 3 doublers -> max ×8)
 // const MAX_DOUBLERS = 3;
 // const effectiveCount = Math.min(multiCount, MAX_DOUBLERS);
 // const mult = 2 ** effectiveCount;
 
-const mult = 2 ** multiCount;  // no cap
 
   // Add cash values (files are like fg_1500.png where 1500 = cents)
   for (const c of cashCells) {
@@ -1574,10 +1583,18 @@ document.addEventListener('keydown', (e) => {
   }
 
   // NEW: spacebar triggers SPIN (same as clicking the button)
-  if (e.code === 'Space' || k === ' ') {
-    e.preventDefault();
-    handleSpinClick();
+if (e.code === 'Space' || k === ' ') {
+  e.preventDefault();
+  const isBonusIntroUp =
+    bonusIntro && bonusIntro.classList.contains('show') &&
+    !startBonusBtn.disabled;
+
+  if (isBonusIntroUp) {
+    startBonusBtn.click();   // start the bonus
+  } else {
+    handleSpinClick();       // normal base-game spin
   }
+}
 });
 
 updateMeters(); updateBetButtons();
