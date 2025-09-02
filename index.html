@@ -531,7 +531,7 @@
         </div>
         <!-- Update the existing free spin counters to use images -->
 <!-- Left free-spin counter (image) -->
-<div class="fs-counter fs-left fs-image" id="fsLeft" style="display:none">
+<div class="fs-counter fs-left fs-image" id="fsLeft" style="display:block">
   <div class="fs-flip" id="fsFlip">
     <!-- FRONT: starts as current image -->
     <img class="face front" id="fsSpinImage" src="./assets/FS_10.png" alt="">
@@ -542,7 +542,7 @@
 
 
 <!-- Win Meter (text) -->
-<div class="fs-counter fs-right fs-text" id="fsRight" style="display:none">
+<div class="fs-counter fs-right fs-text" id="fsRight" style="display:block">
   Win: $0.00
 </div>
 
@@ -1124,7 +1124,7 @@ function spin(){
   if(shouldPrecog){ DEBUG.forcePrecog=false; runPrecogSequence(result); return; }
   safePlay(SFX.reelSpinMusic,{loop:true});
   startReel(0); startReel(1); startReel(2);
-  setTimeout(()=>{ stopReel(0,result[0]); if(result[0]===SYM.BONUS3) safePlay(SFX.base3); },1200);
+  setTimeout(()=>{ stopReel(0,result[0]); if(result[0]===SYM.BONUS3) safePlay(SFX.base3); },1000);
   setTimeout(()=>{
     stopReel(1,result[1]);
     const has3=(result[0]===SYM.BONUS3), has32=(has3 && result[1]===SYM.BONUS2);
@@ -1132,9 +1132,9 @@ function spin(){
       safePlay(SFX.base2); safePlay(SFX.base2Ant);
       echoEl.style.display='block'; r3Hex.classList.add('teasing');
       const nearMiss = result[2] !== SYM.BONUS1; if(nearMiss) r3Hex.classList.add('teasing-strong');
-      setTimeout(()=>finishR3(result),1800);
+      setTimeout(()=>finishR3(result),2000);
     } else finishR3(result);
-  },2500);
+  },2000);
 }
 function finishR3(result){
   setTimeout(()=>{
@@ -1143,7 +1143,7 @@ function finishR3(result){
     const isBonus=(result[0]===SYM.BONUS3 && result[1]===SYM.BONUS2 && result[2]===SYM.BONUS1);
     if(isBonus){ gameRoot.classList.add('border-flash'); setTimeout(()=>gameRoot.classList.remove('border-flash'),900); if (!state.precogActive) safePlay(SFX.base1Contact); enterBonus(); }
     else scoreBase(result);
-  },1500);
+  },1200);
 }
 function scoreBase(result){
   let payout=0;
@@ -1316,13 +1316,13 @@ jackpotCounterMount.appendChild(stack);
 const finalAmount = Math.floor((amount || 0) * (multiplier || 1));
 
 // TUNABLE KNOBS:
-const COUNT_DELAY_MS = 1000;   // roll-up appears 1s after video starts
+const COUNT_DELAY_MS = 500;   // roll-up appears 1s after video starts
 const TOTAL_COUNT_MS = 10000;  // total time the number animates (incl. the delay)
 const FADE_OUT_MS    = 800;    // fade duration of the roll-up at the end
 
 // Derived: actual “moving” duration once it appears
 const startTs  = performance.now() + COUNT_DELAY_MS;
-const duration = Math.max(300, TOTAL_COUNT_MS - COUNT_DELAY_MS);
+const duration = Math.max(3000, TOTAL_COUNT_MS - COUNT_DELAY_MS);
 
 let countDone = false;
 
